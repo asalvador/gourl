@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/asalvador/gourl/"
+	"github.com/asalvador/gourl"
 )
 
 func main() {
