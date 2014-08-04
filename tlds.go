@@ -1,4 +1,6 @@
-0.bg
+package gourl
+
+var TLDs = `0.bg
 1.bg
 2000.hu
 2.bg
@@ -4541,4 +4543,4 @@ zoology.museum
 zp.ua
 z.se
 zt.ua
-zw
+zw`
