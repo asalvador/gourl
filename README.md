@@ -6,14 +6,14 @@ URL Parser for Go
 
 Feature:
 =============
-gourl can parse URL according to its parts
-*Scheme
-*User
-*Password
-*Domain
-*Subdomain
-*Hostname
-*Path
-*Query
-*Fragment
+gourl is a URL Parser of the following parts of a URL:
+* Scheme
+* User
+* Password
+* Domain
+* Subdomain
+* Hostname
+* Path
+* Query
+* Fragment
 
