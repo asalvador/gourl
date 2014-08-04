@@ -16,7 +16,6 @@ func main() {
 		return
 	}
 
-	gourl.SetTLDFile("../tlds")
 	url := gourl.NewURL(u)
 
 	fmt.Println("URL: ", url.URL)

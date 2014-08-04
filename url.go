@@ -4,7 +4,6 @@ package gourl
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 )
 
 // URL parts
@@ -23,8 +22,6 @@ type URL struct {
 	userpass string
 	tld string
 }
-
-var tldFile = "./tlds"
 
 // NewURL returns a new URL given a url string
 func NewURL(url string) *URL {
@@ -220,14 +217,7 @@ func (u *URL) TLD() string {
 		return u.tld
 	}
 
-	data, e := ioutil.ReadFile(tldFile)
-
-	if e != nil {
-		fmt.Printf("error upon reading %s\n", tldFile)
-		return ""
-	}
-
-	for _, tld := range bytes.Split(data, toByteArray("\n")) {
+	for _, tld := range bytes.Split(toByteArray(TLDs), toByteArray("\n")) {
 		if bytes.Equal(tld, toByteArray("")) {
 			continue
 		}
@@ -238,13 +228,6 @@ func (u *URL) TLD() string {
 		}
 	}
 	return u.tld
-}
-
-// SetTLDFile sets the file location of tlds
-func SetTLDFile(path string) {
-	if path != "" {
-		tldFile = path
-	}
 }
 
 // userPass returns the username-password part of the url
