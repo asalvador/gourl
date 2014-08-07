@@ -4,16 +4,44 @@ gourl
 
 URL Parser for Go
 
-Feature:
-=============
-gourl is a URL Parser of the following parts of a URL:
-* Scheme
-* User
-* Password
-* Domain
-* Subdomain
-* Hostname
-* Path
-* Query
-* Fragment
+#### How to install:
+```bash
+go get github.com/asalvador/gourl
+```
+#### How to use:
+gourl is a URL Parser that's very easy to use!
 
+Just construct a new URL:
+```go
+url := gourl.NewURL("http://example.com")
+```
+
+Parse the following parts:
+```go
+  //Scheme
+  url.Scheme()
+
+  //User
+  url.User()
+
+  //Password
+  url.Password()
+
+  //Domain
+  url.Domain()
+
+  //Subdomain
+  url.Subdomain()
+
+  //Hostname
+  url.Hostname()
+
+  //Path
+  url.Path()
+  
+  //Query
+  url.Query()
+  
+  //Fragment
+  url.Fragment()
+```
