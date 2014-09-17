@@ -1,255 +1,215 @@
-// Package gourl implements functions to parse different parts of a URL
 package gourl
 
 import (
-	"bytes"
-	"fmt"
+	"errors"
+	nurl "net/url"
+	"strconv"
+	"strings"
 )
 
-// URL parts
-type URL struct {
-	URL string
-	scheme string		//done
-	user string		//done
-	password string		//done
-	hostname string		//done
-	subdomain string	//done
-	domain string		//done
-	path string		//done
-	query string		//done
-	fragment string		//done
-
-	userpass string
-	tld string
+type GoURL struct {
+	URL       string
+	Scheme    string
+	User      string
+	Password  string
+	Hostname  string
+	Subdomain string
+	Domain    string
+	TLD       string
+	Port      string
+	Path      string
+	Query     string
+	Fragment  string
 }
 
-// NewURL returns a new URL given a url string
-func NewURL(url string) *URL {
+//Parse accepts (or treats the input as) an absolute URL string
+func Parse(url string) (*GoURL, error) {
 	if url == "" {
-		return nil
+		return nil, errors.New("gourl: empty url")
 	}
 
-	return &URL{URL: url}
+	hasScheme := true
+	if strings.Contains(url, "://") == false {
+		url = "http://" + url
+		hasScheme = false
+	}
+
+	u, e := nurl.Parse(url)
+
+	if e != nil {
+		return nil, errors.New("gourl: url parse error")
+	}
+
+	gourl := &GoURL{URL: url, Scheme: u.Scheme, Hostname: u.Host, Path: u.Path, Query: u.RawQuery, Fragment: u.Fragment}
+
+	if hasScheme == false {
+		gourl.Scheme = ""
+	}
+
+	if gourl.Path == "" {
+		gourl.Path = "/"
+	}
+
+	gourl.Port, e = port(gourl.Hostname)
+	if e != nil {
+		return nil, e
+	}
+
+	gourl.Subdomain, e = subdomain(gourl.Hostname)
+	if e != nil {
+		return nil, e
+	}
+
+	gourl.Domain, e = domain(gourl.Hostname)
+	if e != nil {
+		return nil, e
+	}
+
+	gourl.TLD, e = tld(gourl.Hostname)
+	if e != nil {
+		return nil, e
+	}
+
+	//gourl.User, gourl.Password = userpass(rawup)
+	if u.User != nil {
+		gourl.User = u.User.Username()
+		gourl.Password, _ = u.User.Password()
+	}
+
+	return gourl, nil
 }
 
-// Scheme returns the scheme part of the url
-func (u *URL) Scheme() string {
-	if u != nil && u.scheme != "" {
-		return u.scheme
+//Returns normalized version of url based on GoURL parts
+func (url *GoURL) String() string {
+	var u string
+	u = url.Scheme
+	if u == "" {
+		u = "http"
 	}
 
-	burl := toByteArray(u.URL)
-	if bytes.Contains(burl, toByteArray(`://`)) {
-		u.scheme = string(bytes.Split(burl, toByteArray(`://`))[0])
-	}
-
-	return u.scheme
+	u = u + "://" + url.Hostname + url.Path + "?" + url.Query + "#" + url.Fragment
+	return u
 }
 
-// User returns the user part of the url
-func (u *URL) User() string {
-	if u != nil && u.user != "" {
-		return u.user
-	}
-
-	up := u.userPass()
-	if up == "" {
-		return u.user
-	}
-
-	buser := toByteArray(up)
-	if bytes.Contains(buser, toByteArray(":")) {
-		buser = bytes.Split(buser, toByteArray(":"))[0]
-	}
-
-	u.user = string(buser)
-	return u.user
-}
-
-// Password returns the password part of the url
-func (u *URL) Password() string {
-	if u != nil && u.password != "" {
-		return u.password
-	}
-
-	up := u.userPass()
-	if up == "" {
-		u.password = ""
-	}
-
-	bpass := toByteArray(up)
-	if bytes.Contains(bpass, toByteArray(":")) {
-		u.password = string(bytes.Split(bpass, toByteArray(":"))[1])
-	}
-
-	return u.password
-}
-
-// Domain returns the domain part of the url
-func (u *URL) Domain() string {
-	if u != nil && u.domain != "" {
-		return u.domain
-	}
-
-	tld := u.TLD()
-	if tld != "" {
-		bhost := toByteArray(u.Hostname())
-		ptld := "." + tld
-		bdomain := bytes.TrimRight(bhost, ptld)
-		c := bytes.Count(bdomain, toByteArray("."))
-
-		if c > 0 {
-			darray := bytes.Split(bdomain, toByteArray("."))
-			bdomain = darray[len(darray)-1]
+// subdomain returns the subdomain part of the url
+func subdomain(host string) (string, error) {
+	sub := ""
+	if host != "" {
+		t, e := tld(host)
+		if e != nil {
+			return "", errors.New("gourl: error parsing subdomain")
 		}
-		u.domain = fmt.Sprintf("%s.%s", bdomain, tld)
-	}
-
-	return u.domain
-}
-
-// Subdomain returns the subdomain part of the url
-func (u *URL) Subdomain() string {
-	if u != nil && u.subdomain != "" {
-		return u.subdomain
-	}
-
-	if u.Hostname() != "" && u.Domain() != "" {
-		subd := bytes.SplitN(toByteArray(u.Hostname()), toByteArray(u.Domain()), 2)[0]
-		u.subdomain = string(bytes.TrimRight(subd, "."))
-	}
-
-	return u.subdomain
-}
-
-// Hostname returns the hostname part of the url
-func (u *URL) Hostname() string {
-	if u != nil && u.hostname != "" {
-		return u.hostname
-	}
-
-	// Trim scheme
-	burl := bytes.TrimLeft(toByteArray(u.URL), u.Scheme() + "://")
-
-	// Trim path
-	if bytes.Contains(burl, toByteArray("/")) {
-		burl = bytes.Split(burl, toByteArray(`/`))[0]
-	}
-
-	// Trim user-password
-	if bytes.Contains(burl, toByteArray("@")) {
-                burl = bytes.Split(burl, toByteArray(`@`))[1]
-        }
-
-	u.hostname = string(burl)
-	return u.hostname
-}
-
-// Path returns the path part of the url
-func (u *URL) Path() string {
-	if u != nil && u.path != "" {
-		return u.path
-	}
-
-	burl := toByteArray(u.URL)
-	if bytes.Contains(burl, toByteArray(`://`)) {
-		burl = bytes.Split(burl, toByteArray(`://`))[1]
-	}
-
-	// Trim query
-	if bytes.Contains(burl, toByteArray("?")) {
-		burl = bytes.SplitN(burl, toByteArray("?"), 2)[0]
-	}
-
-	// Trim fragment
-	if bytes.Contains(burl, toByteArray("#")) {
-		burl = bytes.SplitN(burl, toByteArray("#"), 2)[0]
-	}
-
-	if bytes.Contains(burl, toByteArray(`/`)) {
-		burl = bytes.SplitN(burl, toByteArray(`/`), 2)[1]
-	} else {
-		burl = toByteArray("") 
-	}
-
-
-	u.path = fmt.Sprintf("/%s", burl)
-	return u.path
-}
-
-// Query returns the query part of the url
-func (u *URL) Query() string {
-	if u != nil && u.query != "" {
-		return u.query
-	}
-
-	burl := toByteArray(u.URL)
-	if bytes.Contains(burl, toByteArray("?")) {
-		burl = bytes.SplitN(burl, toByteArray("?"), 2)[1]
-
-		if u.Fragment() != "" {
-			burl = bytes.TrimRight(burl, "#" + u.Fragment())
+		psub := "." + t
+		p, e := port(host)
+		if e != nil {
+			return "", errors.New("gourl: error parsing subdomain")
 		}
+		if p != "" {
+			psub = psub + ":" + p
+		}
+		if t != "" {
+			subdom := strings.TrimRight(host, psub)
+			c := strings.Count(subdom, ".")
 
-		u.query = string(burl)
+			if c >= 1 {
+				array := strings.Split(subdom, ".")
+				sub = array[0]
+				if len(array) > 1 {
+					sub = strings.Join(array[0:len(array)-1], ".")
+				}
+			}
+		}
 	}
 
-	return u.query
+	return sub, nil
 }
 
-// Fragment returns the fragment part of the url
-func (u *URL) Fragment() string {
-	if u != nil && u.fragment != "" {
-		return u.fragment
+// domainreturns the domain part of the url
+func domain(host string) (string, error) {
+	dom := ""
+	if host != "" {
+		t, e := tld(host)
+		if e != nil {
+			return "", errors.New("gourl: error parsing domain")
+		}
+		pdom := "." + t
+		p, e := port(host)
+		if e != nil {
+			return "", errors.New("gourl: error parsing domain")
+		}
+		if p != "" {
+			pdom = pdom + ":" + p
+		}
+		if t != "" {
+			d := strings.TrimRight(host, pdom)
+			c := strings.Count(d, ".")
+
+			if c >= 0 {
+				array := strings.Split(d, ".")
+				dom = array[len(array)-1] + pdom
+			}
+		}
 	}
 
-	burl := toByteArray(u.URL)
-	if bytes.Contains(burl, toByteArray(`#`)) {
-		u.fragment = string(bytes.SplitN(burl, toByteArray(`#`), 2)[1])
-	}
-
-	return u.fragment
+	return dom, nil
 }
 
 // TLD returns the tld part of the url
-func (u *URL) TLD() string {
-	if u != nil && u.tld != "" {
-		return u.tld
-	}
-
-	for _, tld := range bytes.Split(toByteArray(TLDs), toByteArray("\n")) {
-		if bytes.Equal(tld, toByteArray("")) {
-			continue
+func tld(host string) (string, error) {
+	if host != "" {
+		if strings.Contains(host, ":") {
+			p, e := port(host)
+			if e != nil {
+				return "", errors.New("gourl: error parsing tld")
+			} else if p != "" {
+				pport := ":" + p
+				host = strings.TrimSuffix(host, pport)
+			}
 		}
+		for _, t := range strings.Split(TLDs, "\n") {
+			if t == "" {
+				continue
+			}
 
-		if bytes.HasSuffix(toByteArray(u.Hostname()), tld) {
-			u.tld = string(tld)
-			break
+			if strings.HasSuffix(host, t) {
+				return t, nil
+			}
 		}
 	}
-	return u.tld
+	return "", nil
 }
 
-// userPass returns the username-password part of the url
-func (u *URL) userPass() string {
-	if u != nil && u.userpass != "" {
-		return u.userpass
+func port(host string) (string, error) {
+	var e error
+	p := ""
+	if host != "" {
+		if strings.Contains(host, ":") {
+			array := strings.SplitN(host, ":", 2)
+			if len(array) == 2 && array[1] != "" {
+				_, err := strconv.Atoi(array[1])
+				if err != nil {
+					e = errors.New("gourl: invalid url")
+				} else {
+					p = array[1]
+				}
+			} else {
+				e = errors.New("gourl: error parsing port")
+			}
+		}
 	}
 
-	burl := toByteArray(u.URL)
-	bhost := toByteArray("@" + u.Hostname())
-	if bytes.Contains(burl, bhost) {
-		burl = bytes.TrimLeft(burl, u.Scheme() + "://")
-		u.userpass = string(bytes.Split(burl, bhost)[0])
+	return p, e
+}
+
+func userpass(raw string) (user, password string) {
+	if raw != "" {
+		up := strings.Split(raw, ":")
+		if len(up) == 1 {
+			user = up[0]
+		} else if len(up) == 2 {
+			user = up[0]
+			password = up[1]
+		}
 	}
-
-	return u.userpass
+	return user, password
 }
-
-
-func toByteArray(s string) []byte {
-        b := []byte(s)
-
-        return b
-}
-

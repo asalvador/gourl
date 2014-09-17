@@ -13,35 +13,38 @@ gourl is a URL Parser that's very easy to use!
 
 Just construct a new URL:
 ```go
-url := gourl.NewURL("http://example.com")
+url, err := gourl.Parse("http://example.com")
 ```
 
 Parse the following parts:
 ```go
   //Scheme
-  url.Scheme()
+  url.Scheme
 
   //User
-  url.User()
+  url.User
 
   //Password
-  url.Password()
+  url.Password
 
   //Domain
-  url.Domain()
+  url.Domain
 
   //Subdomain
-  url.Subdomain()
+  url.Subdomain
 
   //Hostname
-  url.Hostname()
+  url.Hostname
+
+  //Port
+  url.Port
 
   //Path
-  url.Path()
+  url.Path
   
   //Query
-  url.Query()
+  url.Query
   
   //Fragment
-  url.Fragment()
+  url.Fragment
 ```
