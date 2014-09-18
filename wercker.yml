@@ -13,6 +13,7 @@ build:
             code: |
                 cd $WERCKER_SOURCE_DIR
                 go version
+                go get -v github.com/tools/godep
 
         # Build the project
         - script:
