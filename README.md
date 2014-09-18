@@ -48,3 +48,8 @@ Parse the following parts:
   //Fragment
   url.Fragment
 ```
+
+Get normalized version of a URL:
+```go
+url.String()
+```
