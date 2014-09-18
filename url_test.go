@@ -296,7 +296,6 @@ func TestURLPathPositive2(t *testing.T) {
 	exp := "/path/goes/here.html"
 	got := URLTest.Path
 
-	fmt.Println(got)
 	if got != exp {
 		t.Fatalf("got %s, expecting %s\n", got, exp)
 	}
@@ -441,4 +440,21 @@ func TestURLWithPort(t *testing.T) {
 	}
 
 	fmt.Println("port test 1 passed...")
+}
+
+func TestURLString(t *testing.T) {
+	url := "www.example.com:80"
+	URLTest, e := Parse(url)
+
+	exp := "http://www.example.com:80/"
+	got := URLTest.String()
+
+	if got != exp {
+		t.Fatalf("got %s, expecting %s\n", got, exp)
+	}
+	if e != nil {
+		t.Fatalf("error encountered:", e)
+	}
+
+	fmt.Println("url normalization test 1 passed...")
 }

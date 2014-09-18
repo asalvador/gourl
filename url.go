@@ -87,7 +87,14 @@ func (url *GoURL) String() string {
 		u = "http"
 	}
 
-	u = u + "://" + url.Hostname + url.Path + "?" + url.Query + "#" + url.Fragment
+	u = u + "://" + url.Hostname + url.Path
+	if url.Query != "" {
+		u = u + "?" + url.Query
+	}
+	if url.Fragment != "" {
+		u = u + "#" + url.Fragment
+	}
+
 	return u
 }
 
