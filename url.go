@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+//GoURL contains the parts of URL after parsing
 type GoURL struct {
 	URL       string
 	Scheme    string

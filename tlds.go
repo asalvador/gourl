@@ -1,5 +1,6 @@
 package gourl
 
+// TLDS is a list of active tlds from ICANN
 var TLDs = `0.bg
 1.bg
 2000.hu
