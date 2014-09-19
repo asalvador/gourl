@@ -1,8 +1,0 @@
-{
-	"ImportPath": "github.com/asalvador/gourl",
-	"GoVersion": "go1.2.1",
-	"Packages": [
-		"./..."
-	],
-	"Deps": []
-}
