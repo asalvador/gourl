@@ -116,7 +116,7 @@ func subdomain(host string) (string, error) {
 			psub = psub + ":" + p
 		}
 		if t != "" {
-			subdom := strings.TrimRight(host, psub)
+			subdom := strings.TrimSuffix(host, psub)
 			c := strings.Count(subdom, ".")
 
 			if c >= 1 {
@@ -149,7 +149,7 @@ func domain(host string) (string, error) {
 			pdom = pdom + ":" + p
 		}
 		if t != "" {
-			d := strings.TrimRight(host, pdom)
+			d := strings.TrimSuffix(host, pdom)
 			c := strings.Count(d, ".")
 
 			if c >= 0 {
